@@ -33,17 +33,16 @@ echo "Cleaning previous images..."
 rm -f "${SCRIPT_DIR}/${ARMBIAN_DIR}/output/images/"*.img*
 
 echo "Starting NanoPi Zero2 build..."
-
 ./compile.sh \
     BOARD=nanopi-zero2 \
-    BRANCH=current \
+    BRANCH=vendor \
     RELEASE=trixie \
     BUILD_MINIMAL=yes \
     BUILD_DESKTOP=no \
-    KERNEL_CONFIGURE=no
+    KERNEL_CONFIGURE=no \
+    ENABLE_EXTENSIONS=iwlwifi-backport
 
 echo "Renaming build artifacts..."
-
 OUTPUT_DIR="${SCRIPT_DIR}/${ARMBIAN_DIR}/output/images"
 NEW_BASENAME="intuitibits-nanopi-zero2-v${IMAGE_VERSION}"
 

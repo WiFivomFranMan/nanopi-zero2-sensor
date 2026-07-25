@@ -1,0 +1,13 @@
+[Unit]
+Description=USB Gadget (NCM + ADB)
+After=local-fs.target
+DefaultDependencies=no
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/usb-gadget start
+ExecStop=/usr/local/sbin/usb-gadget stop
+
+[Install]
+WantedBy=sysinit.target

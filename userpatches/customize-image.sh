@@ -2,13 +2,20 @@
 
 set -euo pipefail
 
+export DEBIAN_FRONTEND=noninteractive
+
 copy_overlay() {
     local file="$1"
     shift
 
-    mkdir -p "$(dirname "$file")"
+    local source="/tmp/overlay${file}"
 
-    install "$@" "/tmp/overlay${file}" "$file"
+    [[ -f "$source" ]] || {
+        echo "ERROR: Missing overlay file: $source" >&2
+        exit 1
+    }
+
+    install -D "$@" "$source" "$file"
 }
 
 echo "Installing packages..."
@@ -19,47 +26,48 @@ apt-get install --no-install-recommends -y \
     tcpdump \
     avahi-daemon \
     avahi-utils \
-    dnsmasq \
-    dhcpcd5 \
     iw \
     wireless-tools
 
+echo "Validating configuration..."
+
+visudo -c -f /tmp/overlay/etc/sudoers.d/pi-scanning
+
 echo "Installing configuration files..."
 
-copy_overlay /etc/avahi/services/nanopizero2.service -o root -g root -m 644
+copy_overlay /etc/avahi/services/nanopizero2.service \
+    -o root -g root -m 0644
 
-copy_overlay /etc/dnsmasq.d/eth0.conf -o root -g root -m 644
+copy_overlay /etc/sudoers.d/pi-scanning \
+    -o root -g root -m 0440
 
-copy_overlay /etc/sudoers.d/pi-scanning -o root -g root -m 440
-visudo -c -f /etc/sudoers.d/pi-scanning
+copy_overlay /usr/local/sbin/usb-gadget \
+    -o root -g root -m 0755
 
-echo "Configuring eth0 fallback..."
+copy_overlay /etc/systemd/system/usb-gadget.service \
+    -o root -g root -m 0644
 
-if ! grep -q "profile static_eth0" /etc/dhcpcd.conf; then
-    cat >> /etc/dhcpcd.conf <<'EOF'
-
-# Static fallback profile for eth0
-profile static_eth0
-static ip_address=192.168.5.1/24
-
-# eth0: try DHCP first, fall back to static if no lease obtained
-interface eth0
-fallback static_eth0
-EOF
-fi
+copy_overlay /etc/systemd/network/20-usb0.network \
+    -o root -g root -m 0644
 
 echo "Configuring services..."
 
-systemctl enable avahi-daemon
-systemctl enable dnsmasq
+systemctl enable avahi-daemon.service
+systemctl enable avahi-daemon.socket
 
-systemctl disable NetworkManager || true
+systemctl enable usb-gadget.service
+systemctl enable systemd-networkd.service
+
+# Prevent other network managers from configuring interfaces.
+systemctl disable NetworkManager.service 2>/dev/null || true
+systemctl disable networking.service 2>/dev/null || true
 
 echo "Cleaning up..."
 
 apt-get autoremove -y
 apt-get clean
+
 rm -rf /var/lib/apt/lists/*
 rm -rf /var/cache/apt/*
 
-echo "Done."
+echo "Customization complete."

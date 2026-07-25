@@ -1,0 +1,97 @@
+#!/bin/bash
+set -euo pipefail
+
+G=/sys/kernel/config/usb_gadget/nanopi-zero2
+
+get_serial()
+{
+    local serial
+
+    serial=$(awk -F': *' '/^Serial/ { print $2 }' /proc/cpuinfo)
+
+    if [ -z "$serial" ] && [ -r /etc/machine-id ]; then
+        serial=$(tr -d '\n' </etc/machine-id)
+    fi
+
+    echo "${serial:-0000000000000000}"
+}
+
+start()
+{
+    modprobe libcomposite
+
+    mountpoint -q /sys/kernel/config || \
+        mount -t configfs none /sys/kernel/config
+
+    mkdir -p "$G"
+    cd "$G"
+
+    local udc
+    udc=$(ls /sys/class/udc | head -n1)
+
+    [ -n "$udc" ] || {
+        echo "No USB Device Controller found." >&2
+        exit 1
+    }
+
+    # Unbind first in case we're already active.
+    echo "" > UDC 2>/dev/null || true
+
+    echo 0x2207 > idVendor
+    echo 0x0019 > idProduct
+    echo 0x0200 > bcdUSB
+    echo 0x0310 > bcdDevice
+
+    mkdir -p strings/0x409
+    echo "$(get_serial)" > strings/0x409/serialnumber
+    echo "FriendlyElec" > strings/0x409/manufacturer
+    echo "NanoPi Zero2" > strings/0x409/product
+
+    mkdir -p configs/c.1/strings/0x409
+    echo "USB Ethernet" > configs/c.1/strings/0x409/configuration
+    echo 250 > configs/c.1/MaxPower
+
+    mkdir -p functions/ncm.usb0
+
+    [ -L configs/c.1/ncm.usb0 ] || \
+        ln -s functions/ncm.usb0 configs/c.1/
+
+    echo "$udc" > UDC
+}
+
+stop()
+{
+    [ -d "$G" ] || exit 0
+
+    cd "$G"
+
+    echo "" > UDC 2>/dev/null || true
+
+    rm -f configs/c.1/ncm.usb0
+
+    rmdir functions/ncm.usb0 2>/dev/null || true
+
+    rmdir configs/c.1/strings/0x409 2>/dev/null || true
+    rmdir configs/c.1 2>/dev/null || true
+    rmdir configs 2>/dev/null || true
+
+    rmdir strings/0x409 2>/dev/null || true
+    rmdir strings 2>/dev/null || true
+
+    cd /
+
+    rmdir "$G" 2>/dev/null || true
+}
+
+case "${1:-start}" in
+    start) start ;;
+    stop) stop ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+        ;;
+esac
