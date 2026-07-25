@@ -1,0 +1,7 @@
+# Static fallback profile for eth0
+profile static_eth0
+static ip_address=192.168.5.1/24
+
+# eth0: try DHCP first, fall back to static if no lease obtained
+interface eth0
+fallback static_eth0

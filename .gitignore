@@ -1,0 +1,15 @@
+# Armbian build tree
+build/
+
+# Build output
+output/
+
+# Logs
+*.log
+
+# macOS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
