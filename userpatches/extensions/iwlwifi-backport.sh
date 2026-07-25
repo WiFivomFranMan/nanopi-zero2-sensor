@@ -219,17 +219,17 @@ declare -a firmware_clone_args=(--no-tags)
 git clone "${firmware_clone_args[@]}" "${IWLWIFI_FIRMWARE_REPOSITORY}" "${FIRMWARE_DIR}"
 [[ -n "${IWLWIFI_FIRMWARE_REF:-}" ]] && git -C "${FIRMWARE_DIR}" checkout --detach "${IWLWIFI_FIRMWARE_REF}"
 
-mkdir -p /lib/firmware/intel/iwlwifi
+mkdir -p /lib/firmware
 mapfile -d '' firmware_files < <(find "${FIRMWARE_DIR}" -type f -name 'iwlwifi-gl-c0-fm-c0-*.ucode' -print0)
 (( ${#firmware_files[@]} > 0 )) || { echo "No BE200 ucode files found in linux-firmware" >&2; exit 1; }
 mapfile -d '' pnvm_files < <(find "${FIRMWARE_DIR}" -type f -name 'iwlwifi-gl-c0-fm-c0*.pnvm' -print0)
-cp -av "${firmware_files[@]}" /lib/firmware/intel/iwlwifi/
-(( ${#pnvm_files[@]} > 0 )) && cp -av "${pnvm_files[@]}" /lib/firmware/intel/iwlwifi/
+cp -av "${firmware_files[@]}" /lib/firmware/
+(( ${#pnvm_files[@]} > 0 )) && cp -av "${pnvm_files[@]}" /lib/firmware/
 
 echo "Verifying install"
 find "${kernel_modules_dir}" -name 'iwlwifi.ko*' | grep -q . || { echo "iwlwifi.ko not found after install" >&2; exit 1; }
 find "${kernel_modules_dir}" -name 'iwlmvm.ko*' | grep -q . || { echo "iwlmvm.ko not found after install" >&2; exit 1; }
-find /lib/firmware/intel/iwlwifi -name 'iwlwifi-gl-c0-fm-c0-*.ucode' | grep -q . || { echo "BE200 firmware not found after install" >&2; exit 1; }
+find /lib/firmware -name 'iwlwifi-gl-c0-fm-c0-*.ucode' | grep -q . || { echo "BE200 firmware not found after install" >&2; exit 1; }
 
 echo "Removing build tooling"
 apt-get purge -y \
