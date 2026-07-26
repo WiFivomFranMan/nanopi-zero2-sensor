@@ -61,22 +61,25 @@ BASE="${IMAGE%.img}"
 
 mv "${IMAGE}" "${OUTPUT_DIR}/${NEW_BASENAME}.img"
 
-if [[ -f "${BASE}.img.sha" ]]; then
-    mv "${BASE}.img.sha" "${OUTPUT_DIR}/${NEW_BASENAME}.img.sha"
-    # The checksum file records the pre-rename filename internally; fix it up
-    # so `shasum -c` works against the renamed .img without extra steps.
-    sed -i.bak -E "s/[^ ]+\.img\$/${NEW_BASENAME}.img/" "${OUTPUT_DIR}/${NEW_BASENAME}.img.sha"
-    rm -f "${OUTPUT_DIR}/${NEW_BASENAME}.img.sha.bak"
-fi
-
 if [[ -f "${BASE}.img.txt" ]]; then
     mv "${BASE}.img.txt" "${OUTPUT_DIR}/${NEW_BASENAME}.img.txt"
 fi
+
+# The raw .img.sha (if any) covers the uncompressed image, which we don't
+# ship (GitHub Releases caps individual assets at 2GB, well under a raw SD
+# card image); it's superseded by the compressed image's own checksum below.
+rm -f "${BASE}.img.sha"
+
+echo "Compressing image..."
+xz -T0 -f "${OUTPUT_DIR}/${NEW_BASENAME}.img"
+
+echo "Checksumming compressed image..."
+( cd "${OUTPUT_DIR}" && sha256sum "${NEW_BASENAME}.img.xz" > "${NEW_BASENAME}.img.xz.sha" )
 
 echo
 echo "Build complete."
 echo
 echo "Artifacts:"
-echo "  ${OUTPUT_DIR}/${NEW_BASENAME}.img"
-echo "  ${OUTPUT_DIR}/${NEW_BASENAME}.img.sha"
+echo "  ${OUTPUT_DIR}/${NEW_BASENAME}.img.xz"
+echo "  ${OUTPUT_DIR}/${NEW_BASENAME}.img.xz.sha"
 echo "  ${OUTPUT_DIR}/${NEW_BASENAME}.img.txt"

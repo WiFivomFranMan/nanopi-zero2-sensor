@@ -20,7 +20,7 @@ This script (idempotent, safe to re-run):
 3. `rsync --delete`s `userpatches/` into `build/userpatches/` — this repo's `userpatches/` is the single source of truth; anything not present here is removed from the Armbian tree's copy.
 4. Deletes previous `.img*` artifacts in `build/output/images/`.
 5. Runs Armbian's `./compile.sh` with fixed parameters: `BOARD=nanopi-zero2 BRANCH=vendor RELEASE=trixie BUILD_MINIMAL=yes BUILD_DESKTOP=no KERNEL_CONFIGURE=no ENABLE_EXTENSIONS=iwlwifi-backport INCLUDE_HOME_DIR=yes`. `INCLUDE_HOME_DIR=yes` is required: Armbian's `create_image_from_sdcard_rootfs()` excludes `/home/*` from the final image by default, which would otherwise silently drop `/home/pi` (created in `customize-image.sh`) even though the `pi` account itself (in `/etc/passwd`) still makes it in — the symptom is sshd refusing login with "Could not chdir to home directory".
-6. Renames the resulting image/checksum/build-log to `intuitibits-nanopi-zero2-v<IMAGE_VERSION>.*` (version set at the top of `build.sh`).
+6. Renames the resulting image/build-log, then compresses the image with `xz` and checksums the compressed file (`sha256sum`), producing `intuitibits-nanopi-zero2-v<IMAGE_VERSION>.img.xz`, `.img.xz.sha`, and `.img.txt` in `build/output/images/` (version set at the top of `build.sh`). Compression isn't optional: the raw `.img` is several GB, well over GitHub Releases' 2GB per-asset limit, which is where images get published (see [Getting the image](README.md#getting-the-image)).
 
 The actual Armbian build system lives in `build/` (gitignored) and is not part of this repo — do not edit files under `build/` expecting changes to persist; edit `userpatches/` instead and re-run `build.sh` to have them synced in.
 

@@ -6,19 +6,19 @@ Requires an Intel BE200 Wi-Fi 6E (M.2) module; the board's onboard Wi-Fi is not 
 
 ## Getting the image
 
-Pre-built images are published on the [Releases page](https://github.com/intuitibits/nanopi-zero2/releases). Download `intuitibits-nanopi-zero2-v<version>.img`, and verify it against the accompanying `.img.sha` checksum.
+Pre-built images are published on the [Releases page](https://github.com/intuitibits/nanopi-zero2/releases). Download `intuitibits-nanopi-zero2-v<version>.img.xz`, and verify it against the accompanying `.img.xz.sha` checksum.
 
 If no release fits your needs, build it yourself: see [Building from source](#building-from-source).
 
 ## Flashing
 
-Use any standard image-flashing tool, e.g. [balenaEtcher](https://etcher.balena.io/), or `dd`:
+Use any standard image-flashing tool, e.g. [balenaEtcher](https://etcher.balena.io/) or Raspberry Pi Imager, both of which can flash the `.img.xz` directly without decompressing it first. To use `dd`, decompress on the fly instead:
 
 ```bash
 # Example only: replace /dev/sdX with your actual SD card device.
 # Double-check the target device first: writing to the wrong one
 # will destroy its data irrecoverably.
-sudo dd if=intuitibits-nanopi-zero2-v1.0.0.img of=/dev/sdX bs=4M status=progress conv=fsync
+xz -dc intuitibits-nanopi-zero2-v1.0.0.img.xz | sudo dd of=/dev/sdX bs=4M status=progress conv=fsync
 ```
 
 ## First boot
@@ -36,7 +36,7 @@ Requires `git`, `rsync`, and a host capable of running [Armbian's build system](
 ./build.sh
 ```
 
-The resulting image, checksum, and build log land in `build/output/images/` as `intuitibits-nanopi-zero2-v<IMAGE_VERSION>.*`.
+The resulting compressed image, checksum, and build log land in `build/output/images/` as `intuitibits-nanopi-zero2-v<IMAGE_VERSION>.*`.
 
 To cut a new version, bump `IMAGE_VERSION` in `build.sh` and the `ver=` TXT record in `userpatches/overlay/etc/avahi/services/nanopizero2.service`.
 
