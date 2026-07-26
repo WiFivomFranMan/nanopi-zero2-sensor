@@ -63,6 +63,10 @@ mv "${IMAGE}" "${OUTPUT_DIR}/${NEW_BASENAME}.img"
 
 if [[ -f "${BASE}.img.sha" ]]; then
     mv "${BASE}.img.sha" "${OUTPUT_DIR}/${NEW_BASENAME}.img.sha"
+    # The checksum file records the pre-rename filename internally; fix it up
+    # so `shasum -c` works against the renamed .img without extra steps.
+    sed -i.bak -E "s/[^ ]+\.img\$/${NEW_BASENAME}.img/" "${OUTPUT_DIR}/${NEW_BASENAME}.img.sha"
+    rm -f "${OUTPUT_DIR}/${NEW_BASENAME}.img.sha.bak"
 fi
 
 if [[ -f "${BASE}.img.txt" ]]; then
