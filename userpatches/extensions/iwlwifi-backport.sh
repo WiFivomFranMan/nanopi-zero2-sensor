@@ -43,7 +43,7 @@ function custom_kernel_config__iwlwifi_backport_wifi_as_modules() {
 function post_install_kernel_debs__500_iwlwifi_backport() {
 	display_alert \
 		"Building Intel BE200 driver (backport-iwlwifi)" \
-		"this is the slow part" \
+		"" \
 		"info"
 	[[ -d "${SDCARD}" ]] || exit_with_error \
 		"Target root filesystem is unavailable" \
