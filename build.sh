@@ -40,7 +40,8 @@ echo "Starting NanoPi Zero2 build..."
     BUILD_MINIMAL=yes \
     BUILD_DESKTOP=no \
     KERNEL_CONFIGURE=no \
-    ENABLE_EXTENSIONS=iwlwifi-backport
+    ENABLE_EXTENSIONS=iwlwifi-backport \
+    INCLUDE_HOME_DIR=yes
 
 echo "Renaming build artifacts..."
 OUTPUT_DIR="${SCRIPT_DIR}/${ARMBIAN_DIR}/output/images"

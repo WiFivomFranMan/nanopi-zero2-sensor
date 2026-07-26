@@ -19,7 +19,7 @@ This script (idempotent, safe to re-run):
 2. Fetches tags and force-checks-out that tag in the `build/` tree (discards any local changes there).
 3. `rsync --delete`s `userpatches/` into `build/userpatches/` — this repo's `userpatches/` is the single source of truth; anything not present here is removed from the Armbian tree's copy.
 4. Deletes previous `.img*` artifacts in `build/output/images/`.
-5. Runs Armbian's `./compile.sh` with fixed parameters: `BOARD=nanopi-zero2 BRANCH=vendor RELEASE=trixie BUILD_MINIMAL=yes BUILD_DESKTOP=no KERNEL_CONFIGURE=no ENABLE_EXTENSIONS=iwlwifi-backport`.
+5. Runs Armbian's `./compile.sh` with fixed parameters: `BOARD=nanopi-zero2 BRANCH=vendor RELEASE=trixie BUILD_MINIMAL=yes BUILD_DESKTOP=no KERNEL_CONFIGURE=no ENABLE_EXTENSIONS=iwlwifi-backport INCLUDE_HOME_DIR=yes`. `INCLUDE_HOME_DIR=yes` is required: Armbian's `create_image_from_sdcard_rootfs()` excludes `/home/*` from the final image by default, which would otherwise silently drop `/home/pi` (created in `customize-image.sh`) even though the `pi` account itself (in `/etc/passwd`) still makes it in — the symptom is sshd refusing login with "Could not chdir to home directory".
 6. Renames the resulting image/checksum/build-log to `intuitibits-nanopi-zero2-v<IMAGE_VERSION>.*` (version set at the top of `build.sh`).
 
 The actual Armbian build system lives in `build/` (gitignored) and is not part of this repo — do not edit files under `build/` expecting changes to persist; edit `userpatches/` instead and re-run `build.sh` to have them synced in.
