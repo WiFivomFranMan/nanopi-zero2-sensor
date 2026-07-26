@@ -37,14 +37,14 @@ apt-get install --no-install-recommends -y \
 
 echo "Validating configuration..."
 
-visudo -c -f /tmp/overlay/etc/sudoers.d/pi-scanning
+visudo -c -f /tmp/overlay/etc/sudoers.d/pi-nopasswd-wifi
 
 echo "Installing configuration files..."
 
 copy_overlay /etc/avahi/services/nanopizero2.service \
     -o root -g root -m 0644
 
-copy_overlay /etc/sudoers.d/pi-scanning \
+copy_overlay /etc/sudoers.d/pi-nopasswd-wifi \
     -o root -g root -m 0440
 
 copy_overlay /usr/local/sbin/usb-gadget \
