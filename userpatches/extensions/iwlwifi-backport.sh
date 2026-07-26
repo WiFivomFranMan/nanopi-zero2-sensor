@@ -5,7 +5,7 @@
 
 function extension_prepare_config__iwlwifi_backport() {
 	IWLWIFI_BACKPORT_REPOSITORY="${IWLWIFI_BACKPORT_REPOSITORY:-https://git.kernel.org/pub/scm/linux/kernel/git/iwlwifi/backport-iwlwifi.git}"
-	IWLWIFI_BACKPORT_REF="${IWLWIFI_BACKPORT_REF:-origin/release/core98}"
+	IWLWIFI_BACKPORT_REF="${IWLWIFI_BACKPORT_REF:-release/core98}"
 	IWLWIFI_FIRMWARE_REPOSITORY="${IWLWIFI_FIRMWARE_REPOSITORY:-https://git.kernel.org/pub/scm/linux/kernel/git/iwlwifi/linux-firmware.git}"
 	IWLWIFI_FIRMWARE_REF="${IWLWIFI_FIRMWARE_REF:-}"
 	IWLWIFI_BUILD_JOBS="${IWLWIFI_BUILD_JOBS:-${CTHREADS:-$(nproc)}}"
@@ -13,6 +13,19 @@ function extension_prepare_config__iwlwifi_backport() {
 		"Intel BE200 support enabled" \
 		"backport-iwlwifi will be compiled in-chroot (ref: ${IWLWIFI_BACKPORT_REF})" \
 		"info"
+}
+
+# Translate a plain branch name / commit hash (our own env var convention)
+# into Armbian's fetch_from_repo ref DSL ("branch:x", "commit:x", "head").
+function _iwlwifi_fetch_ref() {
+	local raw="$1"
+	if [[ -z "${raw}" ]]; then
+		echo "head"
+	elif [[ "${raw}" =~ ^[0-9a-fA-F]{7,40}$ ]]; then
+		echo "commit:${raw}"
+	else
+		echo "branch:${raw}"
+	fi
 }
 
 function extension_finish_config__install_kernel_headers_for_iwlwifi_backport() {
@@ -58,6 +71,30 @@ function post_install_kernel_debs__500_iwlwifi_backport() {
 			"warn"
 	fi
 
+	# Fetch (or update) backport-iwlwifi and linux-firmware into Armbian's
+	# persistent host-side source cache (${SRC}/cache/sources/...), instead
+	# of cloning them from the network on every build. fetch_from_repo only
+	# re-fetches when the remote ref has actually moved.
+	local build_dir="${SDCARD}/tmp/iwlwifi-build"
+	rm -rf "${build_dir}"
+	mkdir -p "${build_dir}"
+
+	display_alert "Fetching backport-iwlwifi (cached)" "${IWLWIFI_BACKPORT_REF}" "info"
+	fetch_from_repo "${IWLWIFI_BACKPORT_REPOSITORY}" "iwlwifi-backport" \
+		"$(_iwlwifi_fetch_ref "${IWLWIFI_BACKPORT_REF}")" "no"
+	rsync -a "${SRC}/cache/sources/iwlwifi-backport/" "${build_dir}/backport-iwlwifi/"
+
+	display_alert "Fetching linux-firmware (cached)" "${IWLWIFI_FIRMWARE_REF:-head}" "info"
+	fetch_from_repo "${IWLWIFI_FIRMWARE_REPOSITORY}" "linux-firmware" \
+		"$(_iwlwifi_fetch_ref "${IWLWIFI_FIRMWARE_REF}")" "no"
+
+	# Only copy the BE200 firmware files into the chroot, not the whole
+	# (multi-gigabyte) linux-firmware working tree.
+	mkdir -p "${build_dir}/linux-firmware"
+	find "${SRC}/cache/sources/linux-firmware" \
+		-type f \( -name 'iwlwifi-gl-c0-fm-c0-*.ucode' -o -name 'iwlwifi-gl-c0-fm-c0*.pnvm' \) \
+		-exec cp -a {} "${build_dir}/linux-firmware/" \;
+
 	local target_script="${SDCARD}/tmp/build-iwlwifi-backport.sh"
 	cat > "${target_script}" <<'IWLWIFI_TARGET_SCRIPT'
 set -euo pipefail
@@ -95,13 +132,15 @@ fi
 BUILD_DIR="/tmp/iwlwifi-build"
 BACKPORT_DIR="${BUILD_DIR}/backport-iwlwifi"
 FIRMWARE_DIR="${BUILD_DIR}/linux-firmware"
-rm -rf "${BUILD_DIR}"
-mkdir -p "${BUILD_DIR}"
 
-echo "Cloning backport-iwlwifi (${IWLWIFI_BACKPORT_REF})"
-git clone --no-tags "${IWLWIFI_BACKPORT_REPOSITORY}" "${BACKPORT_DIR}"
+# Sources are already fetched (from a persistent host-side cache) and
+# copied in here by the host-side half of this hook, before chroot_sdcard.
+[[ -d "${BACKPORT_DIR}/.git" ]] || {
+	echo "backport-iwlwifi sources missing at ${BACKPORT_DIR}" >&2
+	exit 1
+}
+
 cd "${BACKPORT_DIR}"
-git checkout --detach "${IWLWIFI_BACKPORT_REF}"
 echo "Using backport-iwlwifi commit:"
 git rev-parse HEAD
 
@@ -213,12 +252,6 @@ for rp in "${real_depmod_paths[@]}"; do
 done
 depmod -a "${TARGET_KERNEL_VERSION}"
 
-echo "Cloning linux-firmware for BE200 firmware files"
-declare -a firmware_clone_args=(--no-tags)
-[[ -z "${IWLWIFI_FIRMWARE_REF:-}" ]] && firmware_clone_args+=(--depth=1)
-git clone "${firmware_clone_args[@]}" "${IWLWIFI_FIRMWARE_REPOSITORY}" "${FIRMWARE_DIR}"
-[[ -n "${IWLWIFI_FIRMWARE_REF:-}" ]] && git -C "${FIRMWARE_DIR}" checkout --detach "${IWLWIFI_FIRMWARE_REF}"
-
 mkdir -p /lib/firmware
 mapfile -d '' firmware_files < <(find "${FIRMWARE_DIR}" -type f -name 'iwlwifi-gl-c0-fm-c0-*.ucode' -print0)
 (( ${#firmware_files[@]} > 0 )) || { echo "No BE200 ucode files found in linux-firmware" >&2; exit 1; }
@@ -242,10 +275,6 @@ echo "backport-iwlwifi build complete for ${TARGET_KERNEL_VERSION}"
 IWLWIFI_TARGET_SCRIPT
 
 	chroot_sdcard "TARGET_KERNEL_VERSION=${target_kernel_version} \
-		IWLWIFI_BACKPORT_REPOSITORY=${IWLWIFI_BACKPORT_REPOSITORY} \
-		IWLWIFI_BACKPORT_REF=${IWLWIFI_BACKPORT_REF} \
-		IWLWIFI_FIRMWARE_REPOSITORY=${IWLWIFI_FIRMWARE_REPOSITORY} \
-		IWLWIFI_FIRMWARE_REF=${IWLWIFI_FIRMWARE_REF} \
 		IWLWIFI_BUILD_JOBS=${IWLWIFI_BUILD_JOBS} \
 		bash /tmp/build-iwlwifi-backport.sh" ||
 		exit_with_error \
