@@ -1,5 +1,5 @@
 [Unit]
-Description=USB Gadget (NCM + ADB)
+Description=USB Gadget (NCM)
 After=local-fs.target
 DefaultDependencies=no
 

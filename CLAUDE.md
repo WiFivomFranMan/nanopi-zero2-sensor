@@ -26,7 +26,7 @@ The actual Armbian build system lives in `build/` (gitignored) and is not part o
 
 Bump `IMAGE_VERSION` in `build.sh` when cutting a new image; it flows into both the output filename and the avahi service's advertised `ver=` TXT record (`userpatches/overlay/etc/avahi/services/nanopizero2.service`) — keep these in sync.
 
-There's no lint/test command; validation happens by running a full build (which takes a long time, compiles a kernel, and requires Docker per Armbian's normal requirements) or by reasoning about the shell scripts directly.
+There's no lint/test command; validation happens by running a full build (which takes a long time and compiles a kernel — Armbian's build system runs natively on a supported Ubuntu/Debian host or VM; Docker is only a fallback on unsupported host OSes) or by reasoning about the shell scripts directly.
 
 ## Structure of `userpatches/`
 
@@ -42,7 +42,7 @@ Armbian's build system looks for specific, well-known files/directories under `u
 
 ## Device-specific behavior baked into the image
 
-- **USB gadget (NCM + ADB)**: `overlay/usr/local/sbin/usb-gadget` configures a USB Ethernet (NCM) gadget via configfs on boot (`usb-gadget.service`, a oneshot unit run very early via `sysinit.target`, before normal network setup). The resulting `usb0` interface gets a static address and DHCP server config from `overlay/etc/systemd/network/20-usb0.network` (`192.168.7.1/24`, DHCP pool `.10`-`.29`) — this is how a host machine gets network access to the device over USB.
-- **Wi-Fi scanning access**: `overlay/etc/sudoers.d/pi-scanning` grants the `pi` user passwordless sudo for exactly `iw`, `ip`, `tcpdump`, and `scandump` — the minimum needed for Wi-Fi scanning/packet capture tooling without full root.
+- **USB gadget (NCM)**: `overlay/usr/local/sbin/usb-gadget` configures a USB Ethernet (NCM) gadget via configfs on boot (`usb-gadget.service`, a oneshot unit run very early via `sysinit.target`, before normal network setup). The resulting `usb0` interface gets a static address and DHCP server config from `overlay/etc/systemd/network/20-usb0.network` (`192.168.7.1/24`, DHCP pool `.10`-`.29`) — this is how a host machine gets network access to the device over USB.
+- **Wi-Fi scanning access**: `overlay/etc/sudoers.d/pi-scanning` grants the `pi` user passwordless sudo for exactly `iw`, `ip`, and `tcpdump` — the minimum needed for Wi-Fi scanning/packet capture tooling without full root.
 - **Discovery**: `overlay/etc/avahi/services/nanopizero2.service` advertises `_http._tcp` (port 31415, with `model`/`ver` TXT records) and `_ssh._tcp` (port 22, `id=wlanpi`) over mDNS for zero-config discovery on the network.
 - **Networking manager choice**: `systemd-networkd` is authoritative for interface configuration on this image (NetworkManager and ifupdown are explicitly disabled in `customize-image.sh`); any new network interface config should be added as a `systemd/network/*.network` unit, following the pattern in `20-usb0.network`.

@@ -1,1 +1,1 @@
-pi ALL=(ALL) NOPASSWD: /usr/sbin/iw, /usr/sbin/ip, /usr/bin/tcpdump, /usr/bin/scandump
+pi ALL=(ALL) NOPASSWD: /usr/sbin/iw, /usr/sbin/ip, /usr/bin/tcpdump
