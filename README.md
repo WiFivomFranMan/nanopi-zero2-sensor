@@ -6,7 +6,7 @@ Requires an Intel BE200 Wi-Fi 6E (M.2) module; the board's onboard Wi-Fi is not 
 
 ## Getting the image
 
-Pre-built images are published on the [Releases page](https://github.com/intuitibits/nanopi-zero2/releases). Download `intuitibits-nanopi-zero2-v<version>.img.xz`, and verify it against the accompanying `.img.xz.sha` checksum.
+Pre-built images are published on the [Releases page](https://github.com/intuitibits/nanopi-zero2-sensor/releases). Download `intuitibits-nanopi-zero2-v<version>.img.xz`, and verify it against the accompanying `.img.xz.sha` checksum.
 
 If no release fits your needs, build it yourself: see [Building from source](#building-from-source).
 
