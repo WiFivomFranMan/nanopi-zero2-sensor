@@ -22,8 +22,14 @@ echo "Installing packages..."
 
 apt-get update
 
+# Answer wireshark-common's debconf prompt non-interactively so dumpcap gets
+# set up for non-root capture (adds the `wireshark` group + capabilities on
+# /usr/bin/dumpcap), same as `dpkg-reconfigure wireshark-common` would do.
+echo "wireshark-common wireshark-common/install-setuid boolean true" | debconf-set-selections
+
 apt-get install --no-install-recommends -y \
     tcpdump \
+    wireshark-common \
     avahi-daemon \
     avahi-utils \
     iw \
@@ -61,6 +67,24 @@ systemctl enable systemd-networkd.service
 # Prevent other network managers from configuring interfaces.
 systemctl disable NetworkManager.service 2>/dev/null || true
 systemctl disable networking.service 2>/dev/null || true
+
+echo "Configuring default accounts..."
+
+if ! id -u pi &>/dev/null; then
+    useradd -m -s /bin/bash -G sudo pi
+fi
+echo "pi:pi" | chpasswd
+
+# Let pi run dumpcap (Airtool 2 / Airtool Pi) without sudo.
+usermod -aG wireshark pi
+
+# Root login is locked by default; an administrator can re-enable it by
+# setting a new password for root (e.g. `sudo passwd root`).
+usermod -L root
+
+# Accounts are already provisioned above, so skip Armbian's interactive
+# first-login wizard (console/SSH prompt for root password + new user).
+rm -f /root/.not_logged_in_yet
 
 echo "Cleaning up..."
 
