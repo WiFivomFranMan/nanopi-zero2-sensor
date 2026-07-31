@@ -71,7 +71,16 @@ fi
 rm -f "${BASE}.img.sha"
 
 echo "Compressing image..."
-xz -T0 -f "${OUTPUT_DIR}/${NEW_BASENAME}.img"
+IMAGE_PATH="${OUTPUT_DIR}/${NEW_BASENAME}.img"
+COMPRESSED_PATH="${IMAGE_PATH}.xz"
+TEMP_COMPRESSED_PATH="${COMPRESSED_PATH}.tmp"
+
+# Write via stdout so xz doesn't try to copy the raw image's group ownership.
+# The temporary file also prevents a failed build from leaving a partial .xz.
+rm -f "${TEMP_COMPRESSED_PATH}"
+xz -T0 -c "${IMAGE_PATH}" > "${TEMP_COMPRESSED_PATH}"
+mv "${TEMP_COMPRESSED_PATH}" "${COMPRESSED_PATH}"
+rm -f "${IMAGE_PATH}"
 
 echo "Checksumming compressed image..."
 ( cd "${OUTPUT_DIR}" && sha256sum "${NEW_BASENAME}.img.xz" > "${NEW_BASENAME}.img.xz.sha" )
