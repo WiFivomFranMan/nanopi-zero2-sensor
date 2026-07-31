@@ -56,6 +56,9 @@ copy_overlay /etc/systemd/system/usb-gadget.service \
 copy_overlay /etc/systemd/network/20-usb0.network \
     -o root -g root -m 0644
 
+copy_overlay /etc/systemd/network/10-ethernet.network \
+    -o root -g root -m 0644
+
 echo "Configuring services..."
 
 systemctl enable avahi-daemon.service
