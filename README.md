@@ -23,7 +23,7 @@ xz -dc intuitibits-nanopi-zero2-v1.0.0.img.xz | sudo dd of=/dev/sdX bs=4M status
 
 ## First boot
 
-- Connect the NanoPi Zero2 to your computer via USB (it's reachable at `192.168.7.1`) or plug it into your network over Ethernet (DHCP by default, falling back to `172.16.0.1` if no DHCP server is available).
+- Connect the NanoPi Zero2 to your computer via USB (it's reachable at `192.168.7.1`) or plug it into your network over Ethernet (always reachable at `172.16.0.1`, in addition to any DHCP-assigned address). If deploying more than one unit on the same network, note that they'll all claim `172.16.0.1`, so avoid relying on it to distinguish between them.
 - Default login: user `pi`, password `pi`. The `root` account is locked by default; re-enable it later with `sudo passwd root` if needed.
 
   **Change the `pi` password before putting the device on any network you don't fully trust.** This is a public repository, so the default password is not a secret.
