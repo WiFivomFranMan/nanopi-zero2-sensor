@@ -34,6 +34,7 @@ rm -f "${SCRIPT_DIR}/${ARMBIAN_DIR}/output/images/"*.img*
 
 echo "Starting NanoPi Zero2 build..."
 ./compile.sh \
+    PREFER_DOCKER=no \
     BOARD=nanopi-zero2 \
     BRANCH=vendor \
     RELEASE=trixie \
