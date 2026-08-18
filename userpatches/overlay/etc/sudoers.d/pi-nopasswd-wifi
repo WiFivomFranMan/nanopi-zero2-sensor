@@ -1,10 +1,22 @@
-# WLAN Commander drives these over SSH as `sudo -n`, which fails immediately rather
-# than prompting when a password is required. The upstream list covers scan/capture
-# (iw/ip/tcpdump/dumpcap); the rest cover the interface-busy recovery path, which
-# builds `sudo pgrep -f <pat>` then kills the matches (core/src/ssh/commands.rs).
-# Without them that recovery is silently inert -- it "runs" and finds nothing.
+# Match WLANPi OS, which is what WLAN Commander is actually written against.
 #
-# ip is listed at BOTH paths deliberately: the binary is /usr/bin/ip here, and the
-# upstream /usr/sbin/ip entry only matches because sudo's secure_path happens to try
-# /usr/sbin first. Pinning both survives a path change.
-pi ALL=(ALL) NOPASSWD: /usr/sbin/iw, /usr/sbin/ip, /usr/bin/ip, /usr/bin/tcpdump, /usr/bin/dumpcap, /usr/bin/pgrep, /usr/bin/pkill, /usr/bin/kill, /usr/bin/systemctl
+# Measured on a WLANPi Go running WLANPi OS 25.10.2:
+#     wlanpi ALL=(ALL:ALL) NOPASSWD: ALL
+# That is why WC's SSH layer has no sudo-password mechanism outside the Passpoint
+# path -- every other command assumes `sudo -n` just works, and `sudo -n` fails
+# immediately rather than prompting when it does not.
+#
+# Upstream scopes this to iw/ip/tcpdump/dumpcap, which covers scan and capture but
+# not the interface-busy recovery path (`sudo pgrep -f <pat>` then kill), nor
+# `systemctl stop` for releasing a radio. Enumerating the shortfall was tried and
+# rejected: the list came from grepping command templates, which demonstrably
+# misses cases, and it would silently break the next time WC reached for a binary
+# nobody predicted. A whitelist that has to stay in sync with another repo's
+# internals is not a boundary, it is a latent bug.
+#
+# The trade-off is real and deliberate: combined with the published default
+# password this grants root to anyone who can reach SSH. That is precisely the
+# WLANPi posture on the same lab networks, and these are survey sensors, not
+# multi-user hosts. Change the `pi` password before putting one anywhere less
+# trusted -- the upstream README says the same thing about the password alone.
+pi ALL=(ALL:ALL) NOPASSWD: ALL
