@@ -1,0 +1,15 @@
+[Unit]
+Description=Derive a WC-discoverable hostname from the SoC serial
+# Before avahi so the very first advertisement already carries the right name;
+# a rename afterwards leaves stale records cached on the network for their TTL.
+Before=avahi-daemon.service network-online.target
+Wants=local-fs.target
+After=local-fs.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/wc-hostname
+
+[Install]
+WantedBy=multi-user.target

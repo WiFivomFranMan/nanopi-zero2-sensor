@@ -1,0 +1,38 @@
+#!/bin/bash
+# Give each sensor a unique hostname that WLAN Commander can discover.
+#
+# Two things make this necessary, and both are easy to get wrong:
+#
+# 1. It must run ON THE DEVICE, not in customize-image.sh. That script executes in
+#    the build chroot on the build host, where /proc/device-tree/serial-number is the
+#    builder's or absent -- baking the name at image time would hand every unit the
+#    same hostname, which is precisely the mDNS collision this avoids.
+#
+# 2. The name must contain "wlanpi". WLAN Commander filters generic _ssh._tcp results
+#    by SERVICE NAME (MDNSDiscovery.swift / NsdDiscoveryService.kt), and avahi publishes
+#    %h -- the hostname. The stock "nanopi-zero2" is skipped outright. Intuitibits ships
+#    an `id=wlanpi` TXT record for this, but WC never receives TXT, so the hostname is
+#    the only lever available from the image side.
+#    "wlanpi-nano-" keeps the match without pretending this board is a WLANPi.
+set -eu
+
+SERIAL_FILE=/proc/device-tree/serial-number
+[ -r "$SERIAL_FILE" ] || exit 0
+
+SUF="$(tr -d '\0' < "$SERIAL_FILE" | tail -c 4)"
+[ -n "$SUF" ] || exit 0
+
+NEW="wlanpi-nano-${SUF}"
+CUR="$(cat /etc/hostname 2>/dev/null || true)"
+[ "$CUR" = "$NEW" ] && exit 0
+
+echo "$NEW" > /etc/hostname
+hostnamectl set-hostname "$NEW" 2>/dev/null || hostname "$NEW"
+
+# Keep /etc/hosts in step, or sudo logs "unable to resolve host" on every call and
+# avahi can publish a name that no longer resolves locally.
+if grep -qE '^127\.0\.1\.1' /etc/hosts; then
+    sed -i "s/^127\.0\.1\.1.*/127.0.1.1\t${NEW}/" /etc/hosts
+else
+    printf '127.0.1.1\t%s\n' "$NEW" >> /etc/hosts
+fi

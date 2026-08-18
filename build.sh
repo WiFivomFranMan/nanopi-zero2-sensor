@@ -7,7 +7,7 @@ ARMBIAN_DIR="build"
 ARMBIAN_TAG="v26.5.1"
 
 # Version of the Intuitibits NanoPi Zero2 sensor image
-IMAGE_VERSION="1.0.1"
+IMAGE_VERSION="1.0.1-wc1"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 

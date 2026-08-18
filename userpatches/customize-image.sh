@@ -59,12 +59,22 @@ copy_overlay /etc/systemd/network/20-usb0.network \
 copy_overlay /etc/systemd/network/10-ethernet.network \
     -o root -g root -m 0644
 
+# WLAN Commander additions: see the header comments in each file for why.
+copy_overlay /usr/local/sbin/wc-hostname \
+    -o root -g root -m 0755
+copy_overlay /etc/systemd/system/wc-hostname.service \
+    -o root -g root -m 0644
+
 echo "Configuring services..."
 
 systemctl enable avahi-daemon.service
 systemctl enable avahi-daemon.socket
 
 systemctl enable usb-gadget.service
+
+# Runs before avahi so the first mDNS advertisement already carries the unique,
+# WC-discoverable name rather than the shared default.
+systemctl enable wc-hostname.service
 systemctl enable systemd-networkd.service
 
 # Prevent other network managers from configuring interfaces.
