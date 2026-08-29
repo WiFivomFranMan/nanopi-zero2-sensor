@@ -5,7 +5,7 @@
 
 function extension_prepare_config__iwlwifi_backport() {
 	IWLWIFI_BACKPORT_REPOSITORY="${IWLWIFI_BACKPORT_REPOSITORY:-https://git.kernel.org/pub/scm/linux/kernel/git/iwlwifi/backport-iwlwifi.git}"
-	IWLWIFI_BACKPORT_REF="${IWLWIFI_BACKPORT_REF:-release/core98}"
+	IWLWIFI_BACKPORT_REF="${IWLWIFI_BACKPORT_REF:-release/core105}"
 	IWLWIFI_FIRMWARE_REPOSITORY="${IWLWIFI_FIRMWARE_REPOSITORY:-https://git.kernel.org/pub/scm/linux/kernel/git/iwlwifi/linux-firmware.git}"
 	IWLWIFI_FIRMWARE_REF="${IWLWIFI_FIRMWARE_REF:-}"
 	IWLWIFI_BUILD_JOBS="${IWLWIFI_BUILD_JOBS:-${CTHREADS:-$(nproc)}}"
