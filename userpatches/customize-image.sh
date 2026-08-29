@@ -59,6 +59,11 @@ copy_overlay /etc/systemd/network/20-usb0.network \
 copy_overlay /etc/systemd/network/10-ethernet.network \
     -o root -g root -m 0644
 
+# Intel BE200 firmware raises ADVANCED_SYSASSERT and resets the device without
+# these; see the header comments in the file for the measurements.
+copy_overlay /etc/modprobe.d/iwlwifi-be200.conf \
+    -o root -g root -m 0644
+
 echo "Configuring services..."
 
 systemctl enable avahi-daemon.service
