@@ -5,7 +5,7 @@
 
 function extension_prepare_config__iwlwifi_backport() {
 	IWLWIFI_BACKPORT_REPOSITORY="${IWLWIFI_BACKPORT_REPOSITORY:-https://git.kernel.org/pub/scm/linux/kernel/git/iwlwifi/backport-iwlwifi.git}"
-	IWLWIFI_BACKPORT_REF="${IWLWIFI_BACKPORT_REF:-release/core98}"
+	IWLWIFI_BACKPORT_REF="${IWLWIFI_BACKPORT_REF:-release/core105}"
 	IWLWIFI_FIRMWARE_REPOSITORY="${IWLWIFI_FIRMWARE_REPOSITORY:-https://git.kernel.org/pub/scm/linux/kernel/git/iwlwifi/linux-firmware.git}"
 	IWLWIFI_FIRMWARE_REF="${IWLWIFI_FIRMWARE_REF:-}"
 	IWLWIFI_BUILD_JOBS="${IWLWIFI_BUILD_JOBS:-${CTHREADS:-$(nproc)}}"
@@ -143,6 +143,40 @@ FIRMWARE_DIR="${BUILD_DIR}/linux-firmware"
 cd "${BACKPORT_DIR}"
 echo "Using backport-iwlwifi commit:"
 git rev-parse HEAD
+
+# Stable 6.1.y backported timer_delete(), but backport-iwlwifi still guards its
+# own shim with LINUX_VERSION_IS_LESS(6,2,0). It carries LINUX_VERSION_IN_RANGE
+# exclusions for the sibling timer_delete_sync (5.4.x/5.10.x/5.15.x) but none for
+# 6.1.y, so against such a kernel every compilation unit fails with:
+#   error: static declaration of 'timer_delete' follows non-static declaration
+# Probe the kernel headers instead of hardcoding a stable version, so this
+# adapts to whatever Armbian ships.
+if grep -qE '^[[:space:]]*extern[[:space:]]+int[[:space:]]+timer_delete[[:space:]]*\(' \
+	"${kernel_build_dir}/include/linux/timer.h" 2>/dev/null; then
+	echo "Kernel declares timer_delete(); disabling backport shim"
+	TIMER_H="${BACKPORT_DIR}/backport-include/linux/timer.h"
+	awk '
+	{ L[NR] = $0 }
+	END {
+		decl = 0
+		for (i = 1; i <= NR; i++)
+			if (L[i] ~ /^static inline int timer_delete\(struct timer_list/) { decl = i; break }
+		if (decl == 0) { for (i = 1; i <= NR; i++) print L[i]; exit }
+		g = 0
+		for (i = decl - 1; i >= 1; i--) {
+			t = L[i]; sub(/^[ \t]+/, "", t)
+			if (t ~ /^#if /) { g = i; break }
+		}
+		for (i = 1; i <= NR; i++) {
+			if (i == g) {
+				print "/* Kernel provides timer_delete(); shim disabled by the image build. */"
+				print "#if 0"
+			} else if (i > g && i < decl) {
+				continue
+			} else print L[i]
+		}
+	}' "${TIMER_H}" > "${TIMER_H}.new" && mv "${TIMER_H}.new" "${TIMER_H}"
+fi
 
 make defconfig-iwlwifi-public \
 	KLIB="${kernel_modules_dir}" \
