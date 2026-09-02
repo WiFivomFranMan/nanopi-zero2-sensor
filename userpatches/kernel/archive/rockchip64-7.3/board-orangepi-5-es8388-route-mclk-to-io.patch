@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: defcom5-rockchip <defcom5rockchip@proton.me>
+Date: Fri, 21 Aug 2026 21:43:53 -0700
+Subject: [PATCH] arm64: dts: rockchip: rk3588s-orangepi-5: route ES8388 MCLK
+ to the IO pin
+
+Fork override of Armbian's patch/kernel/archive/rockchip64-7.3/board-orangepi-5-es8388-route-mclk-to-io.patch.
+Armbian's copy (main 978a64cd8, 2026-09-01) has its hunk indented with spaces while the
+upstream .dtsi uses tabs, so it fails to apply and Armbian's patcher treats that as fatal,
+which stops the NanoPi Zero2 kernel build even though this Orange Pi audio change is
+irrelevant to it. Same content, tabs restored. Drop this file once Armbian fixes theirs.
+
+Point the es8388 node's "clocks" at I2S1_8CH_MCLKOUT_TO_IO so the codec driver
+enables the MCLK-to-IO gate at probe; "assigned-clocks" stays on I2S1_8CH_MCLKOUT.
+
+Signed-off-by: defcom5-rockchip <defcom5rockchip@proton.me>
+---
+ arch/arm64/boot/dts/rockchip/rk3588s-orangepi-5-5b.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/rockchip/rk3588s-orangepi-5-5b.dtsi b/arch/arm64/boot/dts/rockchip/rk3588s-orangepi-5-5b.dtsi
+--- a/arch/arm64/boot/dts/rockchip/rk3588s-orangepi-5-5b.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588s-orangepi-5-5b.dtsi
+@@ -87,7 +87,7 @@ &i2c6 {
+ 	es8388: audio-codec@10 {
+ 		compatible = "everest,es8388", "everest,es8328";
+ 		reg = <0x10>;
+-		clocks = <&cru I2S1_8CH_MCLKOUT>;
++		clocks = <&cru I2S1_8CH_MCLKOUT_TO_IO>;
+ 		AVDD-supply = <&vcca_3v3_s0>;
+ 		DVDD-supply = <&vcca_1v8_s0>;
+ 		HPVDD-supply = <&vcca_3v3_s0>;
+-- 
+Armbian

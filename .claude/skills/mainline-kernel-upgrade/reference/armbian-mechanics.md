@@ -81,7 +81,11 @@ convention, not a guarantee of ordering against Armbian's own implementations.
 
 Mainline kernel patches go in `patch/kernel/archive/rockchip64-<MAJOR.MINOR>/` (no `series`;
 alphabetical; a same-named file in `userpatches/kernel/archive/rockchip64-<ver>/` overrides the
-core one). A failed patch is a **warning**. RK3528-relevant files at trunk.30 for 7.2 and 7.3
+core one; the patcher keys files by name with the user root added last). **A failed regular patch is fatal** on
+current main (`patching.py` raises after the summary); an empty override file is also fatal
+("No valid patches found"), so to neutralise a broken core patch ship a same-named override
+that applies. Case in point (2026-09-02): `board-orangepi-5-es8388-route-mclk-to-io.patch`
+failed on 7.3-rc1 because Armbian's fix replaced the hunk's tabs with spaces. RK3528-relevant files at trunk.30 for 7.2 and 7.3
 (identical sets): `board-nanopi-zero2-enable-pcie.patch`, `rk3528-02-…Add-SFC-node`,
 `rk3528-13-phy-rockchip-inno-usb2-fix-otg-timer-cleanup`,
 `rk3528-14-…nanopi-zero2-fix-ethernet-phy-reset`, `rk3528-net-dsa-realtek-fixes-for-radxa-e24c`,
