@@ -4,6 +4,11 @@
 # Enable with: ENABLE_EXTENSIONS=iwlwifi-backport
 
 function extension_prepare_config__iwlwifi_backport() {
+	# Vendor 6.1 only. On a mainline kernel iwlwifi/iwlmld are in-tree and this extension would
+	# install its own cfg80211/mac80211/iwlwifi over the kernel's and then assert iwlmvm.ko;
+	# use extensions/wifi7-mainline.sh there (build.sh selects per branch).
+	[[ "${BRANCH}" == "vendor" ]] ||
+		exit_with_error "iwlwifi-backport only applies to BRANCH=vendor" "BRANCH=${BRANCH}: use ENABLE_EXTENSIONS=wifi7-mainline"
 	IWLWIFI_BACKPORT_REPOSITORY="${IWLWIFI_BACKPORT_REPOSITORY:-https://git.kernel.org/pub/scm/linux/kernel/git/iwlwifi/backport-iwlwifi.git}"
 	IWLWIFI_BACKPORT_REF="${IWLWIFI_BACKPORT_REF:-release/core102}"
 	IWLWIFI_FIRMWARE_REPOSITORY="${IWLWIFI_FIRMWARE_REPOSITORY:-https://git.kernel.org/pub/scm/linux/kernel/git/iwlwifi/linux-firmware.git}"

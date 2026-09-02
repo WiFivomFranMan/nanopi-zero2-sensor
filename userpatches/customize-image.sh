@@ -53,6 +53,14 @@ copy_overlay /usr/local/sbin/usb-gadget \
 copy_overlay /etc/systemd/system/usb-gadget.service \
     -o root -g root -m 0644
 
+# Mainline dwc3 (OTG) may register the UDC after sysinit or only when a host is attached; udev
+# starts this unit on every UDC add so the NCM gadget binds whenever the controller appears.
+copy_overlay /etc/systemd/system/usb-gadget-rebind.service \
+    -o root -g root -m 0644
+
+copy_overlay /etc/udev/rules.d/90-usb-gadget-udc.rules \
+    -o root -g root -m 0644
+
 copy_overlay /etc/systemd/network/20-usb0.network \
     -o root -g root -m 0644
 
@@ -91,6 +99,15 @@ echo "pi:pi" | chpasswd
 
 # Let pi run dumpcap (Airtool 2 / Airtool Pi) without sudo.
 usermod -aG wireshark pi
+
+# Optional, per builder: a public key for the pi account. The path is gitignored so the public
+# fork never carries one; without it the only login is the published password, which is fine
+# for the field but makes post-flash verification (and every reflash) a password dance.
+if [[ -f /tmp/overlay/home/pi/.ssh/authorized_keys ]]; then
+    echo "Installing authorized_keys for pi..."
+    install -D -o pi -g pi -m 0700 -d /home/pi/.ssh
+    install -o pi -g pi -m 0600 /tmp/overlay/home/pi/.ssh/authorized_keys /home/pi/.ssh/authorized_keys
+fi
 
 # Root login is locked by default; an administrator can re-enable it by
 # setting a new password for root (e.g. `sudo passwd root`).

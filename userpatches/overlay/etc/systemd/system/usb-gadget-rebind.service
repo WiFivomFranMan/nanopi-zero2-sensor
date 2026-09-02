@@ -1,0 +1,10 @@
+[Unit]
+Description=Bind the USB Gadget (NCM) to a newly appeared UDC
+# Started by udev (90-usb-gadget-udc.rules) each time a UDC is added: on mainline the dwc3 OTG
+# role switch can register the controller after usb-gadget.service ran at sysinit, and again
+# whenever a host cable is plugged in. Not RemainAfterExit, so every add event starts it afresh.
+After=usb-gadget.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/usb-gadget start

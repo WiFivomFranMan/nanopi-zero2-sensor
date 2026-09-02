@@ -5,9 +5,18 @@ G=/sys/kernel/config/usb_gadget/nanopi-zero2
 
 get_serial()
 {
-    local serial
+    local serial=""
 
-    serial=$(awk -F': *' '/^Serial/ { print $2 }' /proc/cpuinfo)
+    # Vendor 6.1 exposes the SoC serial as a "Serial:" line in /proc/cpuinfo; mainline arm64
+    # does not. U-Boot writes it into the device tree for both, so prefer that (it is also what
+    # wc-hostname derives the hostname from), then cpuinfo, then the machine id.
+    if [ -r /proc/device-tree/serial-number ]; then
+        serial=$(tr -d '\0' < /proc/device-tree/serial-number)
+    fi
+
+    if [ -z "$serial" ]; then
+        serial=$(awk -F': *' '/^Serial/ { print $2 }' /proc/cpuinfo)
+    fi
 
     if [ -z "$serial" ] && [ -r /etc/machine-id ]; then
         serial=$(tr -d '\n' </etc/machine-id)
@@ -23,18 +32,27 @@ start()
     mountpoint -q /sys/kernel/config || \
         mount -t configfs none /sys/kernel/config
 
+    local udc
+    udc=$(ls /sys/class/udc 2>/dev/null | head -n1)
+
+    # On mainline the USB-C port is a dwc3 in OTG mode whose role is decided by the usb2phy's
+    # VBUS/ID sensing from a queued work item, so the UDC can appear after this unit has run,
+    # or only once a host cable is plugged in. That is not an error: a udev rule
+    # (90-usb-gadget-udc.rules) re-runs this script when a UDC is added.
+    [ -n "$udc" ] || {
+        echo "No USB Device Controller yet; will bind when one appears." >&2
+        exit 0
+    }
+
     mkdir -p "$G"
     cd "$G"
 
-    local udc
-    udc=$(ls /sys/class/udc | head -n1)
+    # Already bound to this controller: nothing to do (idempotent for the udev re-run).
+    if [ -f UDC ] && [ "$(cat UDC 2>/dev/null)" = "$udc" ]; then
+        exit 0
+    fi
 
-    [ -n "$udc" ] || {
-        echo "No USB Device Controller found." >&2
-        exit 1
-    }
-
-    # Unbind first in case we're already active.
+    # Unbind first in case we're already active on a different/old controller.
     echo "" > UDC 2>/dev/null || true
 
     echo 0x2207 > idVendor

@@ -13,3 +13,7 @@ output/
 # Editors
 .vscode/
 .idea/
+
+# Optional per-builder SSH key for the pi account (installed by customize-image.sh if present).
+# Kept out of the public fork on purpose; a reflash otherwise wipes any hand-installed key.
+userpatches/overlay/home/

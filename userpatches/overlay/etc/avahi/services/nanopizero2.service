@@ -8,7 +8,7 @@
     <type>_http._tcp</type>
     <port>31415</port>
     <txt-record>model=NanoPi Zero2</txt-record>
-    <txt-record>ver=1.0.1</txt-record>
+    <txt-record>ver=1.1.0-wc1</txt-record>
   </service>
 
   <service>

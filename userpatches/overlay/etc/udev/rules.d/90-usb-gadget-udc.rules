@@ -1,0 +1,4 @@
+# Re-run the NCM gadget setup whenever a USB Device Controller appears. usb-gadget.service
+# runs once at sysinit and exits 0 if there is no UDC yet (mainline dwc3 OTG registers it from
+# the usb2phy role-switch work, possibly after that point, or only when a host is attached).
+SUBSYSTEM=="udc", ACTION=="add", TAG+="systemd", ENV{SYSTEMD_WANTS}+="usb-gadget-rebind.service"

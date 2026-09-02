@@ -2,7 +2,9 @@
 
 A custom Armbian image that turns a [FriendlyElec NanoPi Zero2](http://www.friendlyarm.com/) into a headless Wi-Fi scanning and packet capture sensor for use with Intuitibits' Wi-Fi tools.
 
-Requires an Intel BE200 Wi-Fi 6E (M.2) module; the board's onboard Wi-Fi is not supported. Connects over USB or Ethernet.
+Requires an Intel BE200 Wi-Fi 7 (M.2 Key-E) module; the board's onboard Wi-Fi is not supported. Connects over USB or Ethernet.
+
+Two kernels are supported: the Rockchip 6.1 vendor kernel (`WC_BRANCH=vendor`, the 1.0.x images) and mainline 7.x (`WC_BRANCH=edge` for 7.2, `bleedingedge` for 7.3, the default). Mainline is where the BE200 is driven in-tree and where other Wi-Fi 7 cards (MT7925, WCN7850, RTL8922A) have drivers; see `CLAUDE.md` and `.claude/skills/mainline-kernel-upgrade/`.
 
 ## Getting the image
 
@@ -18,7 +20,7 @@ Use any standard image-flashing tool, e.g. [balenaEtcher](https://etcher.balena.
 # Example only: replace /dev/sdX with your actual SD card device.
 # Double-check the target device first: writing to the wrong one
 # will destroy its data irrecoverably.
-xz -dc intuitibits-nanopi-zero2-v1.0.0.img.xz | sudo dd of=/dev/sdX bs=4M status=progress conv=fsync
+xz -dc intuitibits-nanopi-zero2-v1.1.0-wc1-bleedingedge.img.xz | sudo dd of=/dev/sdX bs=4M status=progress conv=fsync
 ```
 
 ## First boot
@@ -33,10 +35,12 @@ xz -dc intuitibits-nanopi-zero2-v1.0.0.img.xz | sudo dd of=/dev/sdX bs=4M status
 Requires `git`, `rsync`, and a host capable of running [Armbian's build system](https://docs.armbian.com/Developer-Guide_Build-Preparation/) (a supported Ubuntu/Debian host or VM; Docker is only needed as Armbian's own fallback for unsupported hosts).
 
 ```bash
-./build.sh
+./build.sh                    # mainline 7.3-rc (bleedingedge)
+WC_BRANCH=edge ./build.sh     # mainline 7.2.y
+WC_BRANCH=vendor ./build.sh   # Rockchip 6.1 vendor kernel
 ```
 
-The resulting compressed image, checksum, and build log land in `build/output/images/` as `intuitibits-nanopi-zero2-v<IMAGE_VERSION>.*`.
+The resulting compressed image, checksum, build log and `.build-info` provenance land in `build/output/images/` as `intuitibits-nanopi-zero2-v<IMAGE_VERSION>-<branch>.*`. Previous images are moved to `build/output/images/archive/`, never deleted.
 
 To cut a new version, bump `IMAGE_VERSION` in `build.sh` and the `ver=` TXT record in `userpatches/overlay/etc/avahi/services/nanopizero2.service`.
 

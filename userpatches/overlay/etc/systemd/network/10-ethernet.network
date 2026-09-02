@@ -1,5 +1,8 @@
 [Match]
-Name=end1
+# The one GMAC is "end1" on the vendor 6.1 kernel (its DT aliases it ethernet1, inherited from
+# RK356x) and "end0" on mainline (rk3528-nanopi-zero2.dts aliases it ethernet0). A glob covers
+# both. Not Type=ether: that would also capture usb0, since this file sorts before 20-usb0.
+Name=end*
 
 [Network]
 DHCP=yes
