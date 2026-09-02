@@ -50,7 +50,9 @@ channel the driver advertises in any mode.
 ## Firmware pin
 
 `WIFI7_FIRMWARE_REF=20260810` (kernel.org linux-firmware tag). Contents relevant here:
-`iwlwifi-gl-c0-fm-c0-{c101,c102,c103,c106}.ucode`, `iwlwifi-gl-c0-fm-c0.pnvm`,
+`intel/iwlwifi/iwlwifi-gl-c0-fm-c0-{c101,c102,c103,c106}.ucode` and `.pnvm` (the tree moved
+iwlwifi files under `intel/iwlwifi/` in 2026; WHENCE `Link:` entries give them their top-level
+names on install, and the driver requests the top-level name — the hook copies them there),
 `mediatek/mt7925/*`, `ath12k/WCN7850/hw2.0/{amss,board-2,m3}.bin` + `ncm865/`,
 `rtw89/rtw8922a_fw-4.bin`. master (after the tag) adds `c107`. Bump only after checking the
 target kernel's accepted range, and change the verify hook's `102..106` window if 7.2 support

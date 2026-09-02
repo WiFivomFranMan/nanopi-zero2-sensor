@@ -80,9 +80,14 @@ for b in vendor current; do
   if [[ $rc -eq 1 ]]; then echo "ok   : prepare_config refuses BRANCH=$b"; else echo "FAIL : prepare_config accepted BRANCH=$b"; overall=1; fi
 done
 ( display_alert() { :; }; exit_with_error() { exit 1; }; BRANCH=bleedingedge; source "$EXT"; extension_prepare_config__wifi7_mainline && [[ "$WIFI7_FIRMWARE_REF" == 20260810 ]] ) >/dev/null 2>&1 && echo "ok   : prepare_config accepts bleedingedge and pins 20260810" || { echo "FAIL : prepare_config on bleedingedge"; overall=1; }
-# firmware hook against a fake cache
-mk_tree "$R"; mkdir -p "$R/cache/sources/linux-firmware/rtw89"; : > "$R/cache/sources/linux-firmware/iwlwifi-gl-c0-fm-c0-c106.ucode"; : > "$R/cache/sources/linux-firmware/iwlwifi-gl-c0-fm-c0-101.ucode"; : > "$R/cache/sources/linux-firmware/iwlwifi-gl-c0-fm-c0.pnvm"; : > "$R/cache/sources/linux-firmware/rtw89/rtw8922a_fw-4.bin"; rm -rf "$R"/sdcard/lib/firmware/*
-( display_alert() { :; }; exit_with_error() { echo "$1"; exit 1; }; fetch_from_repo() { :; }; SDCARD="$R/sdcard"; SRC="$R"; BRANCH=bleedingedge; WIFI7_FIRMWARE_REF=20260810; WIFI7_FIRMWARE_REPOSITORY=x; source "$EXT"; post_install_kernel_debs__500_wifi7_firmware ) >/dev/null 2>&1
-ls "$R/sdcard/lib/firmware" "$R/sdcard/lib/firmware/rtw89" | tr '\n' ' '; echo
-[[ -f "$R/sdcard/lib/firmware/iwlwifi-gl-c0-fm-c0-c106.ucode" && -f "$R/sdcard/lib/firmware/iwlwifi-gl-c0-fm-c0.pnvm" && -f "$R/sdcard/lib/firmware/rtw89/rtw8922a_fw-4.bin" && ! -f "$R/sdcard/lib/firmware/iwlwifi-gl-c0-fm-c0-101.ucode" ]] && echo "ok   : firmware hook copies core files + pnvm + rtw8922a, skips API-numbered ucode" || { echo "FAIL : firmware hook copy set"; overall=1; }
+# firmware hook against a fake cache, in both linux-firmware layouts (intel/iwlwifi/ since 2026; top level before)
+fw_case() {   # $1 label, $2 relative dir for the intel files
+  mk_tree "$R"; rm -rf "$R/cache"; mkdir -p "$R/cache/sources/linux-firmware/$2" "$R/cache/sources/linux-firmware/rtw89"
+  : > "$R/cache/sources/linux-firmware/$2/iwlwifi-gl-c0-fm-c0-c106.ucode"; : > "$R/cache/sources/linux-firmware/$2/iwlwifi-gl-c0-fm-c0-101.ucode"; : > "$R/cache/sources/linux-firmware/$2/iwlwifi-gl-c0-fm-c0.pnvm"; : > "$R/cache/sources/linux-firmware/rtw89/rtw8922a_fw-4.bin"
+  rm -rf "$R"/sdcard/lib/firmware/*
+  ( display_alert() { :; }; exit_with_error() { echo "$1"; exit 1; }; fetch_from_repo() { :; }; SDCARD="$R/sdcard"; SRC="$R"; BRANCH=bleedingedge; WIFI7_FIRMWARE_REF=20260810; WIFI7_FIRMWARE_REPOSITORY=x; source "$EXT"; post_install_kernel_debs__500_wifi7_firmware ) >/dev/null 2>&1
+  [[ -f "$R/sdcard/lib/firmware/iwlwifi-gl-c0-fm-c0-c106.ucode" && -f "$R/sdcard/lib/firmware/iwlwifi-gl-c0-fm-c0.pnvm" && -f "$R/sdcard/lib/firmware/rtw89/rtw8922a_fw-4.bin" && ! -f "$R/sdcard/lib/firmware/iwlwifi-gl-c0-fm-c0-101.ucode" ]] && echo "ok   : firmware hook ($1): core files + pnvm + rtw8922a copied to top level, API-numbered ucode skipped" || { echo "FAIL : firmware hook ($1)"; overall=1; }
+}
+fw_case "intel/iwlwifi layout" "intel/iwlwifi"
+fw_case "top-level layout" "."
 echo "overall=$overall"; exit $overall

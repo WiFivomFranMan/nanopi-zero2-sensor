@@ -106,15 +106,21 @@ function post_install_kernel_debs__500_wifi7_firmware() {
 	mkdir -p "${fw_dst}/rtw89"
 
 	# Intel BE200 (gl-c0-fm-c0): core-named ucode files only -- the 7.x loader never tries the
-	# API-numbered ones -- plus the PNVM. armbian-firmware provides mt7925 and WCN7850 already.
+	# API-numbered ones -- plus the PNVM. Since 2026 linux-firmware keeps them under
+	# intel/iwlwifi/ with WHENCE "Link:" entries that `make install` turns into the top-level
+	# names the driver requests; older trees had them at the top level. Copy the real files to
+	# the top level of /lib/firmware, which is where iwlwifi looks. armbian-firmware provides
+	# mt7925 and WCN7850 already.
+	local intel_src="${fw_src}"
+	[[ -d "${fw_src}/intel/iwlwifi" ]] && intel_src="${fw_src}/intel/iwlwifi"
 	local count
-	count="$(find "${fw_src}" -maxdepth 1 -type f -name 'iwlwifi-gl-c0-fm-c0-c*.ucode' | wc -l | tr -d ' ')"
-	(( count > 0 )) || exit_with_error "No BE200 core firmware in linux-firmware ${WIFI7_FIRMWARE_REF}" "expected iwlwifi-gl-c0-fm-c0-c1xx.ucode"
-	find "${fw_src}" -maxdepth 1 -type f -name 'iwlwifi-gl-c0-fm-c0-c*.ucode' -exec cp -av {} "${fw_dst}/" \;
-	if [[ -f "${fw_src}/iwlwifi-gl-c0-fm-c0.pnvm" ]]; then
-		cp -av "${fw_src}/iwlwifi-gl-c0-fm-c0.pnvm" "${fw_dst}/"
+	count="$(find "${intel_src}" -maxdepth 1 -type f -name 'iwlwifi-gl-c0-fm-c0-c*.ucode' | wc -l | tr -d ' ')"
+	(( count > 0 )) || exit_with_error "No BE200 core firmware in linux-firmware ${WIFI7_FIRMWARE_REF}" "expected iwlwifi-gl-c0-fm-c0-c1xx.ucode under ${intel_src}"
+	find "${intel_src}" -maxdepth 1 -type f -name 'iwlwifi-gl-c0-fm-c0-c*.ucode' -exec cp -av {} "${fw_dst}/" \;
+	if [[ -f "${intel_src}/iwlwifi-gl-c0-fm-c0.pnvm" ]]; then
+		cp -av "${intel_src}/iwlwifi-gl-c0-fm-c0.pnvm" "${fw_dst}/"
 	else
-		exit_with_error "iwlwifi-gl-c0-fm-c0.pnvm missing from linux-firmware ${WIFI7_FIRMWARE_REF}" "the BE200 needs the PNVM alongside the ucode"
+		exit_with_error "iwlwifi-gl-c0-fm-c0.pnvm missing from linux-firmware ${WIFI7_FIRMWARE_REF}" "the BE200 needs the PNVM alongside the ucode (looked in ${intel_src})"
 	fi
 
 	# Realtek RTL8922A(E/U): armbian-firmware has no 8922a files and Conflicts with Debian's
