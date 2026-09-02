@@ -22,8 +22,8 @@ commit. Branch argument: `$ARGUMENTS` (default `bleedingedge`; `edge` is 7.2.y).
    hand-installed key. To make bring-up scriptable, put a public key in the gitignored
    `userpatches/overlay/home/pi/.ssh/authorized_keys` *before* building.
 3. **Nothing here runs on this Mac except editing and linting.** The build needs the Ubuntu build
-   server (`kevin@10.80.1.17`, `~/nanopi-fork/sensor`); it is not always reachable (office
-   network vs lab). Every step marked **HUMAN** needs the user: the NUC, the board, an SD card, a
+   server (`kevin@10.80.1.17` on the lab LAN, `kevin@100.100.82.65` over Tailscale from anywhere
+   else; `~/nanopi-fork/sensor`). Every step marked **HUMAN** needs the user: the NUC, the board, an SD card, a
    serial adapter, or a test window.
 4. **Fail loudly, never warn.** Armbian treats a failed patch as a warning and drops unknown
    config symbols silently. The `wifi7-mainline` extension turns the known silent failures into
@@ -82,15 +82,19 @@ All of this is already in place on branch `mainline-7.3`; when repeating for a n
 
 ## Phase 2 — build (HUMAN: the NUC)
 
-- Reachability: `ssh -o BatchMode=yes kevin@10.80.1.17 hostname`. From the office network the
-  NUC does not answer; wait for the lab network.
+- Reachability: `ssh -o BatchMode=yes kevin@10.80.1.17 hostname` on the lab LAN, or
+  `kevin@100.100.82.65` over Tailscale (what worked from the office on 2026-09-02).
 - On the NUC, in `~/nanopi-fork/sensor`: `git branch backup/nuc-$(git rev-parse --short HEAD)`
   first (the checkout there has carried unpushed commits before), then `git fetch fork` and
   `git checkout mainline-7.3`.
 - Preflight: `df -h ~` (a mainline kernel worktree plus a fresh Armbian trunk checkout is
   ~10 GB; the Armbian cache is ~22 GB), `du -sh build/cache build/output`.
-- First mainline build: `WC_BRANCH=<branch> WC_IGNORE_CACHE=yes ./build.sh 2>&1 | tee ~/build-<branch>-$(date +%F).log`
-  inside `tmux`. Budget 1.5–2 h. Later builds: omit `WC_IGNORE_CACHE`.
+- Launch detached (the NUC has no tmux, and an ssh session that keeps the build's stdout open
+  hangs the caller): `LOG=~/build-<branch>-$(date +%F-%H%M).log; WC_BRANCH=<branch> setsid -f
+  ./build.sh > "$LOG" 2>&1 < /dev/null`, then follow it with `tail -F "$LOG"` filtered for
+  `wifi7-mainline|error! \[|Build complete`. A cold build is ~15 min for the kernel plus ~10 min
+  for the rootfs and image; ccache makes reruns ~6 min. `WC_IGNORE_CACHE=yes` only for a first
+  build on a new Armbian pin.
 - Expected noise: `BRANCH_VALID_FOR_BOARD=no` for `bleedingedge` (the board file lists
   `vendor,current,edge`); the extension supplies what the board file would. Not expected: any
   `wifi7-mainline verify FAILED` line — that is the build telling you which silent failure it
