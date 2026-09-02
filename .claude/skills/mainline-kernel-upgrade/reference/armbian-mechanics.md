@@ -89,6 +89,14 @@ core one). A failed patch is a **warning**. RK3528-relevant files at trunk.30 fo
 `rk3528-pmdomain-rockchip-fixes-for-working-usb-rk3528.patch`. The 6.18 set additionally
 carries the USB nodes and Zero2 USB enable that went upstream in 7.2.
 
+## The out-of-tree driver harness (`EXTRAWIFI`)
+
+`EXTRAWIFI` defaults to `yes` (`lib/functions/configuration/main-config.sh`) and makes
+`drivers-harness.sh` inject a dozen out-of-tree Wi-Fi drivers into the kernel tree before the
+compile, each behind a `linux-version compare` gate in `drivers_network.sh`. Several have no
+upper bound and fail on 7.3. `EXTRAWIFI=no` skips the whole harness (and its patch hash);
+`KERNEL_DRIVERS_SKIP+=(driver_<name>)` skips one. The kernel artifact hash includes both.
+
 ## Artifacts and caches
 
 `ARTIFACT_IGNORE_CACHE=yes` (a `compile.sh` parameter) bypasses the local and OCI artifact

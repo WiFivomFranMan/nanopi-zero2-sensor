@@ -27,11 +27,16 @@ case "${BRANCH}" in
         ARMBIAN_TAG="v26.5.1"
         ARMBIAN_SHA="8de11a017f7f05a82c77850f8322928cb6a3b70c"
         EXTENSIONS="iwlwifi-backport"
+        EXTRAWIFI_FLAG="yes"   # Armbian default; keeps the vendor build identical to 1.0.x
         ;;
     edge | bleedingedge)
         ARMBIAN_TAG="v26.11.0-trunk.30"
         ARMBIAN_SHA="ee00ac7c8a7ef07d5f258acb787638f283c00a0a"
         EXTENSIONS="wifi7-mainline"
+        # Armbian's bundled out-of-tree Wi-Fi drivers (uwe5622, rtl8852bs, rtl8723ds, rtl8189es/fs,
+        # rtl8192eu, ...) have no upper kernel-version bound and fail to compile against 7.3's
+        # cfg80211 API (first build, 2026-09-02). Every driver this image needs is in-tree.
+        EXTRAWIFI_FLAG="no"
         ;;
     current)
         echo "ERROR: WC_BRANCH=current (6.18) cannot load the BE200 core-10x firmware; use edge or bleedingedge." >&2
@@ -105,6 +110,7 @@ echo "Starting NanoPi Zero2 build (BRANCH=${BRANCH}, extensions=${EXTENSIONS})..
     KERNEL_CONFIGURE=no \
     ENABLE_EXTENSIONS="${EXTENSIONS}" \
     INCLUDE_HOME_DIR=yes \
+    EXTRAWIFI="${EXTRAWIFI_FLAG}" \
     ARTIFACT_IGNORE_CACHE="${IGNORE_CACHE}"
 
 echo "Renaming build artifacts..."
@@ -142,6 +148,7 @@ rm -f "${BASE}.img.sha"
     echo "armbian_commit=${ARMBIAN_SHA}"
     echo "branch=${BRANCH}"
     echo "extensions=${EXTENSIONS}"
+    echo "extrawifi=${EXTRAWIFI_FLAG}"
     echo "artifact_ignore_cache=${IGNORE_CACHE}"
     echo "built=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 } > "${OUTPUT_DIR}/${NEW_BASENAME}.build-info"

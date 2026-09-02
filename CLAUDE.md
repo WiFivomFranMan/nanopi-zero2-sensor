@@ -73,4 +73,5 @@ Armbian's build system looks for specific, well-known files/directories under `u
 - There is no thermal sensor (no tsadc node upstream at any version), so no throttling and no `/sys/class/thermal` reading. Measure case temperature under load before field use.
 - The kernel deb is `linux-image-<branch>-rockchip64`; the DTB lives under `/boot/dtb-<ver>/rockchip/`.
 - The debug UART header (silkscreen `UART2DBG`, 3.3 V, 1500000 baud) is `ttyS2` on vendor and `ttyS0` on mainline. Same pins.
+- Armbian's out-of-tree Wi-Fi driver harness must be off (`EXTRAWIFI=no`, done in `build.sh`): uwe5622, rtl8852bs, rtl8723ds, rtl8189es/fs and rtl8192eu all fail against 7.3's cfg80211 API. Not gated by version upstream; the first 7.3 build died on them 737 s in.
 - The build prints `BRANCH_VALID_FOR_BOARD=no` for `bleedingedge` because the board file lists `vendor,current,edge`; that is expected and the extension supplies what the board file would.

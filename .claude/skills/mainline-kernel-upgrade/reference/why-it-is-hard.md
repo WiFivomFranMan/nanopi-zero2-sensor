@@ -124,11 +124,16 @@ armbian/build#9508 (open): a cached `uboot-nanopi-zero2-edge` artifact shipped a
 with a 0-byte FDT ("No valid device tree binary found"). `WC_IGNORE_CACHE=yes` on the first
 build; `dumpimage -l` on `u-boot.itb` afterwards.
 
-## 11. 7.3 specifically
+## 11. 7.3 specifically: Armbian's out-of-tree Wi-Fi drivers break the kernel build
 
 Armbian's "prepare 7.3 patches" PR (2026-08-31): "all out-of-tree drivers broke — again …
-fixing is out of scope". The `lt 7.3`-gated Realtek out-of-tree drivers are skipped. Not needed
-by this image.
+fixing is out of scope". Verified the hard way on the first build (2026-09-02, 737 s in): the
+driver harness (`lib/functions/compilation/patch/drivers_network.sh`) injects uwe5622,
+rtl8852bs, rtl8723ds, rtl8189es, rtl8189fs and rtl8192eu with **no upper version gate**, and
+every one fails on 7.3's changed `remain_on_channel`/`mgmt_tx` cookie signatures
+(`-Werror=incompatible-pointer-types`). The research had claimed they were `lt 7.3`-gated;
+only some others are (`lt 6.17`, `lt 6.19`). Fix: `EXTRAWIFI=no` on the `compile.sh` line
+(`build.sh` does this for mainline branches). Nothing this image uses is out-of-tree.
 
 ## 12. What was never verified on hardware (as of 2026-09-02)
 
