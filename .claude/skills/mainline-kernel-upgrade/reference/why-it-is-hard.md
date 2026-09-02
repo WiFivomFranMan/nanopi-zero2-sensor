@@ -82,6 +82,10 @@ on upstream 7.2 DT has no published report for this board.
 - `v26.5.1`: current 6.18, edge **7.0** (EOL, frozen at 7.0.14), bleedingedge **7.1-rc3** (EOL).
 - `v26.11.0-trunk.30` = `ee00ac7c8a7ef07d5f258acb787638f283c00a0a` (2026-08-31): edge **7.2**,
   bleedingedge **7.3**. First tag with that mapping; no stable Armbian tag newer than v26.5.1.
+  **But it has no `patch/kernel/archive/rockchip64-7.3/`** — that directory landed on `main` on
+  2026-09-01 ("rockchip64-7.3: rewrite patches against 7.3-rc1"). A 7.3 kernel built from
+  trunk.30 gets zero rk3528 patches: the verify hook caught `pcie@fe000000` disabled in the
+  built DTB on 2026-09-02. The fork pins `main` at `6d07521a` (2026-09-02) instead.
 - Armbian main deleted the 7.0 and 7.1 patch archives; trunk tags get pruned (only 4/11/22/30
   survived for v26.11.0). `KERNEL_MAJOR_MINOR` overrides are silently reset.
 

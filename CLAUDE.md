@@ -13,8 +13,8 @@ There is no traditional source code, package manifest, or test suite here. "Buil
 | `WC_BRANCH` | Kernel | Armbian pin | Extension | Why |
 |---|---|---|---|---|
 | `vendor` | Rockchip 6.1 BSP (`rk-6.1-rkr5.1`) | `v26.5.1` | `iwlwifi-backport` | The 1.0.x images. BE200 only works through Intel's out-of-tree backport driver compiled in the chroot. |
-| `edge` | mainline `linux-7.2.y` | `v26.11.0-trunk.30` | `wifi7-mainline` | In-tree iwlwifi/iwlmld, mt7925, ath12k, rtw89. Stable branch. |
-| `bleedingedge` (default) | mainline `v7.3-rc` tag | `v26.11.0-trunk.30` | `wifi7-mainline` | Same RK3528 support as 7.2 (the DTs are identical); newest Wi-Fi code. |
+| `edge` | mainline `linux-7.2.y` | main `6d07521a` (2026-09-02) | `wifi7-mainline` | In-tree iwlwifi/iwlmld, mt7925, ath12k, rtw89. Stable branch. |
+| `bleedingedge` (default) | mainline `v7.3-rc` tag | main `6d07521a` (2026-09-02) | `wifi7-mainline` | Same RK3528 support as 7.2 (the DTs are identical); newest Wi-Fi code. |
 
 `current` (6.18 LTS) is refused: its iwlwifi accepts BE200 firmware up to core 99 only, and no such file exists any more.
 
@@ -31,7 +31,7 @@ WC_IGNORE_CACHE=yes ./build.sh               # first mainline build: bypass Armb
 
 This script (idempotent, safe to re-run):
 1. Clones `https://github.com/armbian/build.git` into `./build/` if not already present.
-2. Fetches tags and `main`, then force-checks-out the **commit SHA** pinned for the branch (the tag is documentation: Armbian prunes trunk tags). Any local change in `build/` is discarded.
+2. Fetches tags and `main`, then force-checks-out the **commit SHA** pinned for the branch (the tag, if any, is documentation: Armbian prunes trunk tags, and the mainline pin is an untagged `main` commit because `v26.11.0-trunk.30` predates the `rockchip64-7.3` patch set by a day). Any local change in `build/` is discarded.
 3. `rsync --delete`s `userpatches/` into `build/userpatches/` — this repo's `userpatches/` is the single source of truth.
 4. **Archives** previous `.img*` files into `build/output/images/archive/<timestamp>/`. It used to delete them; that destroyed the only copy of a working image once.
 5. Runs Armbian's `./compile.sh` with `BOARD=nanopi-zero2 BRANCH=<branch> RELEASE=trixie BUILD_MINIMAL=yes BUILD_DESKTOP=no KERNEL_CONFIGURE=no ENABLE_EXTENSIONS=<per branch> INCLUDE_HOME_DIR=yes ARTIFACT_IGNORE_CACHE=<WC_IGNORE_CACHE>`. `INCLUDE_HOME_DIR=yes` is required: Armbian excludes `/home/*` from the final image otherwise, which drops `/home/pi` while the account survives in `/etc/passwd` — the symptom is sshd refusing login with "Could not chdir to home directory".

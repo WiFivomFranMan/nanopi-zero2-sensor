@@ -18,10 +18,13 @@ IMAGE_VERSION="1.1.0-wc1"
 BRANCH="${WC_BRANCH:-bleedingedge}"
 
 # The Armbian framework is pinned PER BRANCH. The vendor image keeps the tag it was
-# validated on; the mainline branches need a tag where edge=7.2 / bleedingedge=7.3
+# validated on; the mainline branches need a commit where edge=7.2 / bleedingedge=7.3
 # (rockchip64_common.inc moved there on 2026-08-30; v26.5.1 still means 7.0 / 7.1, both
-# EOL). Trunk tags get pruned by Armbian, so the commit SHA is what is really checked out
-# and the tag is documentation.
+# EOL) AND where patch/kernel/archive/rockchip64-7.3 exists: the trunk.30 tag (2026-08-31)
+# has the mapping but not the 7.3 patch set, which landed on main on 2026-09-01 -- a 7.3
+# kernel built from trunk.30 gets zero rk3528 patches and a dead M.2 slot (caught by the
+# wifi7-mainline verify hook, 2026-09-02). Trunk tags get pruned by Armbian, so the commit
+# SHA is what is really checked out; ARMBIAN_TAG is documentation and may be empty.
 case "${BRANCH}" in
     vendor)
         ARMBIAN_TAG="v26.5.1"
@@ -30,8 +33,8 @@ case "${BRANCH}" in
         EXTRAWIFI_FLAG="yes"   # Armbian default; keeps the vendor build identical to 1.0.x
         ;;
     edge | bleedingedge)
-        ARMBIAN_TAG="v26.11.0-trunk.30"
-        ARMBIAN_SHA="ee00ac7c8a7ef07d5f258acb787638f283c00a0a"
+        ARMBIAN_TAG=""   # no tag yet: main as of 2026-09-02 16:25 UTC (after v26.11.0-trunk.30)
+        ARMBIAN_SHA="6d07521aecf698a6fc52b23245c8d47906c687ad"
         EXTENSIONS="wifi7-mainline"
         # Armbian's bundled out-of-tree Wi-Fi drivers (uwe5622, rtl8852bs, rtl8723ds, rtl8189es/fs,
         # rtl8192eu, ...) have no upper kernel-version bound and fail to compile against 7.3's
@@ -67,8 +70,10 @@ echo "Fetching tags and main..."
 git fetch origin --tags --force
 git fetch origin main
 
-echo "Checking out ${ARMBIAN_TAG} (${ARMBIAN_SHA})..."
-if git rev-parse -q --verify "refs/tags/${ARMBIAN_TAG}^{commit}" > /dev/null; then
+echo "Checking out ${ARMBIAN_TAG:-<untagged main commit>} (${ARMBIAN_SHA})..."
+if [[ -z "${ARMBIAN_TAG}" ]]; then
+    :
+elif git rev-parse -q --verify "refs/tags/${ARMBIAN_TAG}^{commit}" > /dev/null; then
     tag_sha="$(git rev-parse "refs/tags/${ARMBIAN_TAG}^{commit}")"
     if [[ "${tag_sha}" != "${ARMBIAN_SHA}" ]]; then
         echo "WARNING: tag ${ARMBIAN_TAG} now points at ${tag_sha}, not ${ARMBIAN_SHA}; using the SHA." >&2
@@ -144,7 +149,7 @@ rm -f "${BASE}.img.sha"
     echo "image=${NEW_BASENAME}"
     echo "fork_commit=$(git -C "${SCRIPT_DIR}" rev-parse HEAD 2>/dev/null || echo unknown)"
     echo "fork_dirty=$(git -C "${SCRIPT_DIR}" status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
-    echo "armbian_tag=${ARMBIAN_TAG}"
+    echo "armbian_tag=${ARMBIAN_TAG:-none}"
     echo "armbian_commit=${ARMBIAN_SHA}"
     echo "branch=${BRANCH}"
     echo "extensions=${EXTENSIONS}"

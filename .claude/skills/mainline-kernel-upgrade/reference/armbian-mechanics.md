@@ -1,6 +1,6 @@
 # Armbian build mechanics this repo depends on
 
-Verified at `v26.5.1` (`8de11a01`) and `v26.11.0-trunk.30` (`ee00ac7c8`) on 2026-09-02. File
+Verified at `v26.5.1` (`8de11a01`) and `v26.11.0-trunk.30` (`ee00ac7c8`) on 2026-09-02; the fork's mainline pin is `main` at `6d07521a` (2026-09-02), the first commit with both the 7.2/7.3 mapping and the `rockchip64-7.3` patch archive. File
 paths are inside the Armbian checkout (`build/`).
 
 ## Branch → kernel → names
@@ -87,7 +87,9 @@ core one). A failed patch is a **warning**. RK3528-relevant files at trunk.30 fo
 `rk3528-14-…nanopi-zero2-fix-ethernet-phy-reset`, `rk3528-net-dsa-realtek-fixes-for-radxa-e24c`,
 `rk3528-net-dwmac-rk-rgmii-delays-wip.patch.disabled`,
 `rk3528-pmdomain-rockchip-fixes-for-working-usb-rk3528.patch`. The 6.18 set additionally
-carries the USB nodes and Zero2 USB enable that went upstream in 7.2.
+carries the USB nodes and Zero2 USB enable that went upstream in 7.2. **A missing archive
+directory is silent**: Armbian logs `Using kernel patch dir: archive/rockchip64-7.3` and applies
+nothing if the directory does not exist (trunk.30 had 6.12/6.18/7.1/7.2 only).
 
 ## The out-of-tree driver harness (`EXTRAWIFI`)
 
