@@ -49,6 +49,7 @@ commit. Branch argument: `$ARGUMENTS` (default `bleedingedge`; `edge` is 7.2.y).
 
 - `reference/why-it-is-hard.md` — what is upstream, what is Armbian-only, what is nowhere.
 - `reference/armbian-mechanics.md` — hook names, config semantics, patch dirs, pins.
+- `reference/build-history.md` — the six attempts behind the first image and what each one taught.
 - In the Armbian checkout (`build/` after one `build.sh` run, or `gh api` on `armbian/build` at
   the pinned commit): re-read `config/boards/nanopi-zero2.csc` and confirm its hooks still match
   `current | edge` only; `grep -rn post_install_kernel_debs lib/`, `pre_umount_final_image`,
