@@ -90,4 +90,9 @@ fw_case() {   # $1 label, $2 relative dir for the intel files
 }
 fw_case "intel/iwlwifi layout" "intel/iwlwifi"
 fw_case "top-level layout" "."
+# core patch override hook: copies userpatches/kernel-overrides/<dir>/x.patch over ${SRC}/patch/kernel/<dir>/x.patch
+mk_tree "$R"; mkdir -p "$R/up/kernel-overrides/archive/rockchip64-7.3" "$R/patch/kernel/archive/rockchip64-7.3"
+echo "fixed" > "$R/up/kernel-overrides/archive/rockchip64-7.3/x.patch"; echo "broken" > "$R/patch/kernel/archive/rockchip64-7.3/x.patch"; echo "keep" > "$R/patch/kernel/archive/rockchip64-7.3/y.patch"
+( display_alert() { :; }; exit_with_error() { exit 1; }; SRC="$R"; USERPATCHES_PATH="$R/up"; KERNELPATCHDIR="archive/rockchip64-7.3"; BRANCH=bleedingedge; BOARD=nanopi-zero2; source "$EXT"; extension_finish_config__wifi7_mainline_core_patch_overrides ) >/dev/null 2>&1
+[[ "$(cat "$R/patch/kernel/archive/rockchip64-7.3/x.patch")" == fixed && "$(cat "$R/patch/kernel/archive/rockchip64-7.3/y.patch")" == keep ]] && echo "ok   : core patch override replaces only the same-named core file" || { echo "FAIL : core patch override"; overall=1; }
 echo "overall=$overall"; exit $overall

@@ -80,8 +80,12 @@ convention, not a guarantee of ordering against Armbian's own implementations.
 ## Patches
 
 Mainline kernel patches go in `patch/kernel/archive/rockchip64-<MAJOR.MINOR>/` (no `series`;
-alphabetical; a same-named file in `userpatches/kernel/archive/rockchip64-<ver>/` overrides the
-core one; the patcher keys files by name with the user root added last). **A failed regular patch is fatal** on
+alphabetical). **A same-named file in `userpatches/kernel/…` does NOT override the core one**:
+`patching.py` builds `CONST_PATCH_ROOT_DIRS` user-then-core per directory and fills a dict keyed
+by file name, so the core file wins (verified by a build on 2026-09-02). The fork's extension
+provides the missing mechanism: files under `userpatches/kernel-overrides/<KERNELPATCHDIR>/`
+are copied over the core file at `extension_finish_config__`, before the patch dir is hashed.
+**A failed regular patch is fatal** on
 current main (`patching.py` raises after the summary); an empty override file is also fatal
 ("No valid patches found"), so to neutralise a broken core patch ship a same-named override
 that applies. Case in point (2026-09-02): `board-orangepi-5-es8388-route-mclk-to-io.patch`

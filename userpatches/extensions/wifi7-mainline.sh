@@ -71,6 +71,32 @@ function extension_finish_config__wifi7_mainline_assert_boot_glue() {
 		exit_with_error "SERIALCON is '${SERIALCON}'" "expected ttyS0 on ${BRANCH}; RK3528's debug UART is UART0 on mainline"
 }
 
+# --- 3b. replacing broken core kernel patches --------------------------------------------
+# Armbian's patcher (lib/tools/patching.py) keys patch files by name and iterates the CORE root
+# last, so a same-named file under userpatches/kernel/ is silently shadowed by the core one
+# (verified 2026-09-02; the opposite of what one would expect). There is no skip list, an empty
+# file is fatal, and a failed regular patch is fatal. So: files placed under
+# userpatches/kernel-overrides/<KERNELPATCHDIR>/ are copied OVER the core file of the same name
+# here, at the end of config -- before the patch directory is hashed for the kernel artifact.
+# The Armbian tree is force-checked-out by build.sh on every run, so this never accumulates.
+function extension_finish_config__wifi7_mainline_core_patch_overrides() {
+	local dir="${USERPATCHES_PATH}/kernel-overrides/${KERNELPATCHDIR}"
+	[[ -d "${dir}" ]] || return 0
+	local f name target
+	for f in "${dir}"/*.patch; do
+		[[ -f "${f}" ]] || continue
+		name="${f##*/}"
+		target="${SRC}/patch/kernel/${KERNELPATCHDIR}/${name}"
+		if [[ -f "${target}" ]] && cmp -s "${f}" "${target}"; then
+			display_alert "Core kernel patch already matches fork override" "${KERNELPATCHDIR}/${name}" "info"
+			continue
+		fi
+		[[ -f "${target}" ]] || display_alert "Fork override has no core counterpart (will be applied as a new patch)" "${KERNELPATCHDIR}/${name}" "wrn"
+		display_alert "Replacing core kernel patch with fork override" "${KERNELPATCHDIR}/${name}" "wrn"
+		cp -f "${f}" "${target}"
+	done
+}
+
 # --- 1. kernel config --------------------------------------------------------------------
 # opts_* arrays only: Armbian calls kernel-config hooks twice (once for version hashing with no
 # .config present), and the arrays are applied before `make olddefconfig`. A symbol that does not
